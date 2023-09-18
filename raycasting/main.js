@@ -71,9 +71,9 @@ class Player {
 		this.r_angle = 3 * Math.PI / 2;
 		this.side = 12;
 		this.fov = 60 * Math.PI / 180;
-		this.speed = 3;
+		this.speed = 4;
 
-		this.numberOfRays = map.width;
+		this.numberOfRays = map.width / 2;
 		this.rayInc = this.fov / this.numberOfRays;
 	}
 
@@ -107,11 +107,58 @@ class Player {
 		}
 	}
 
+	horizontalIntersection(rayAngle) {
+		let sign = -1;
+		let isRayFacingUp = rayAngle > Math.PI && rayAngle < 2 * Math.PI;
+		let xstep, ystep;
+		ystep = Math.floor(this.y / map.tile) * map.tile;
+		if (!isRayFacingUp) {
+			sign *= -1;
+			ystep += map.tile;
+		}
+		xstep = this.x + (ystep - this.y) / Math.tan(rayAngle);
+		while (true) {
+			if ((isRayFacingUp && map.isWall(xstep, ystep - map.tile)) || (!isRayFacingUp && map.isWall(xstep, ystep)))
+				break;
+			xstep += sign * map.tile / Math.tan(rayAngle);
+			ystep += sign * map.tile;
+		}
+		return ({xstep, ystep});
+	}
+
+	verticalIntersetion(rayAngle) {
+		let sign = 1;
+		let isRayFacingLeft = rayAngle > Math.PI / 2 && rayAngle < 1.5 * Math.PI;
+		let xstep, ystep;
+		xstep = Math.ceil(this.x / map.tile) * map.tile;
+		if (isRayFacingLeft) {
+			xstep -= map.tile;
+			sign *= -1;
+		}
+		ystep = this.y - (this.x - xstep) * Math.tan(rayAngle);
+		while (true) {
+			if ((isRayFacingLeft && map.isWall(xstep - map.tile, ystep)) || (!isRayFacingLeft && map.isWall(xstep, ystep)))
+				break;
+			xstep += sign * map.tile;
+			ystep += sign * map.tile * Math.tan(rayAngle);
+		}
+		return ({xstep, ystep});
+	}
+
+	minPoint(step1, step2) {
+		let distance1 = Math.sqrt((step1.xstep - this.x) * (step1.xstep - this.x) + (step1.ystep - this.y) * (step1.ystep - this.y));
+		let distance2 = Math.sqrt((step2.xstep - this.x) * (step2.xstep - this.x) + (step2.ystep - this.y) * (step2.ystep - this.y));
+		if (distance1 < distance2)
+			return (step1);
+		return (step2);
+	}
+	
 	castRays() {
 		let rayAngle = normalizeAngle(this.r_angle - this.fov / 2);
 		for (let rayId = 0; rayId < this.numberOfRays; rayId++) {
+			let step = this.minPoint(this.horizontalIntersection(rayAngle), this.verticalIntersetion(rayAngle));
 			stroke("yellow");
-			line(this.x, this.y, this.x + Math.cos(rayAngle) * 50, this.y + Math.sin(rayAngle) * 50);
+			line(this.x, this.y, step.xstep, step.ystep);
 			stroke("black");
 			rayAngle = normalizeAngle(rayAngle + this.rayInc);
 		}
