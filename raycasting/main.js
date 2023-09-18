@@ -62,13 +62,17 @@ class Player {
 		this.side = 12;
 		this.fov = 60 * Math.PI / 180;
 		this.speed = 3;
+
+		this.numberOfRays = map.width;
+		this.rayInc = this.fov / this.numberOfRays;
 	}
 
 	render() {
 		fill("lime");
 		ellipse(this.x, this.y, this.side);
+		this.castRays();
 		stroke("red");
-		line(this.x, this.y, this.x + Math.cos(this.r_angle) * 20, this.y + Math.sin(this.r_angle) * 20);
+		line(this.x, this.y, this.x + Math.cos(this.r_angle) * 50, this.y + Math.sin(this.r_angle) * 50);
 		stroke("black");
 	}
 
@@ -92,9 +96,26 @@ class Player {
 			}
 		}
 	}
+
+	castRays() {
+		let rayAngle = normalizeAngle(this.r_angle - this.fov / 2);
+		for (let rayId = 0; rayId < this.numberOfRays; rayId++) {
+			stroke("yellow");
+			line(this.x, this.y, this.x + Math.cos(rayAngle) * 50, this.y + Math.sin(rayAngle) * 50);
+			stroke("black");
+			rayAngle = normalizeAngle(rayAngle + this.rayInc);
+		}
+	}
 }
 
 const player = new Player();
+
+function normalizeAngle(angle) {
+	angle = angle % (2 * Math.PI);
+	if (angle < 0)
+		angle += 2 * Math.PI;
+	return (angle);
+}
 
 function setup() {
 	createCanvas(map.width, map.height);
