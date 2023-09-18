@@ -20,8 +20,8 @@ class Map {
 		this.grid = [
 			[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
 			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
 			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
 			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -30,6 +30,16 @@ class Map {
 			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
 			[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 		];
+	}
+
+	collideWithWall(plyrX, plyrY, newX, newY) {
+		if (newX < 0 || newX > this.width || newY < 0 || newY > this.height)
+			return (true);
+		if (this.grid[Math.floor(plyrY / this.tile)][Math.floor(newX / this.tile)] === 1)
+			return (true);
+		if (this.grid[Math.floor(newY / this.tile)][Math.floor(plyrX / this.tile)] === 1)
+			return (true);
+		return (false);
 	}
 
 	isWall(newX, newY) {
@@ -90,7 +100,7 @@ class Player {
 				sign *= -1;
 			newX = this.x + sign * Math.cos(this.r_angle) * this.speed;
 			newY = this.y + sign * Math.sin(this.r_angle) * this.speed;
-			if (!map.isWall(newX, newY)) {
+			if (!map.collideWithWall(this.x, this.y, newX, newY)) {
 				this.x = newX;
 				this.y = newY;
 			}
