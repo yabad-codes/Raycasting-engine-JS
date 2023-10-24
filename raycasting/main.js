@@ -63,7 +63,7 @@ class Player {
 		this.fov = 60 * Math.PI / 180;
 		this.speed = 4;
 
-		this.number_of_rays = map.width / map.wall_strip_width;
+		this.number_of_rays = map.width / map.wall_strip_width * 2;
 		this.rayInc = this.fov / this.number_of_rays;
 	}
 
