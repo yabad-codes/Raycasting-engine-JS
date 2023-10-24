@@ -1,29 +1,19 @@
-/**
- * 1- init map
- * 2- init player
- * 3- render map
- * 4- render player
- * 5- handle player movements
- * 6- handle player coalision with the walls
- * 7- raycast rays
- * 8- check horizontal and vertical intersections
- * 9- generate 3d view
- */
-
 class Map {
 	constructor() {
 		this.rows = 15;
 		this.cols = 11;
-		this.tile = 45;
+		this.tile = 80;
 		this.width = this.rows * this.tile;
 		this.height = this.cols * this.tile;
+		this.wall_strip_width = 10;
+		this.scale_factor = 0.2;
 		this.grid = [
 			[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+			[1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+			[1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+			[1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+			[1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
 			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
 			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
 			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -56,7 +46,7 @@ class Map {
 				fill("#777");
 				if (this.grid[j][i] == 1)
 					fill("white");
-				rect(i * this.tile, j * this.tile, this.tile, this.tile);
+				rect(i * this.tile * this.scale_factor, j * this.tile * this.scale_factor, this.tile * this.scale_factor, this.tile * this.scale_factor);
 			}
 		}
 	}
@@ -69,20 +59,20 @@ class Player {
 		this.x = map.width / 2;
 		this.y = map.height / 2;
 		this.r_angle = 3 * Math.PI / 2;
-		this.side = 12;
+		this.side = 8;
 		this.fov = 60 * Math.PI / 180;
 		this.speed = 4;
 
-		this.numberOfRays = map.width / 2;
-		this.rayInc = this.fov / this.numberOfRays;
+		this.number_of_rays = map.width / map.wall_strip_width;
+		this.rayInc = this.fov / this.number_of_rays;
 	}
 
 	render() {
 		fill("lime");
-		ellipse(this.x, this.y, this.side);
+		ellipse(this.x * map.scale_factor, this.y * map.scale_factor, this.side);
 		this.castRays();
 		stroke("red");
-		line(this.x, this.y, this.x + Math.cos(this.r_angle) * 50, this.y + Math.sin(this.r_angle) * 50);
+		line(this.x * map.scale_factor, this.y * map.scale_factor, (this.x + Math.cos(this.r_angle) * 90) * map.scale_factor, (this.y + Math.sin(this.r_angle) * 90) * map.scale_factor);
 		stroke("black");
 	}
 
@@ -155,10 +145,20 @@ class Player {
 	
 	castRays() {
 		let rayAngle = normalizeAngle(this.r_angle - this.fov / 2);
-		for (let rayId = 0; rayId < this.numberOfRays; rayId++) {
+		for (let rayId = 0; rayId < this.number_of_rays; rayId++) {
 			let step = this.minPoint(this.horizontalIntersection(rayAngle), this.verticalIntersetion(rayAngle));
+			let wallHeight = (map.tile / getDistance(rayAngle, step)) * (map.width / 2) / Math.tan(this.fov / 2);
+			//draw a rectangle
+			fill('red');
+			noStroke();
+			rect(
+				rayId * map.wall_strip_width,
+				(map.height / 2) - (wallHeight / 2),
+				map.wall_strip_width,
+				wallHeight
+			);
 			stroke("yellow");
-			line(this.x, this.y, step.xstep, step.ystep);
+			line(this.x * map.scale_factor, this.y * map.scale_factor, step.xstep * map.scale_factor, step.ystep * map.scale_factor);
 			stroke("black");
 			rayAngle = normalizeAngle(rayAngle + this.rayInc);
 		}
@@ -166,6 +166,14 @@ class Player {
 }
 
 const player = new Player();
+
+function getDistance(rayAngle, step) {
+	let eucl_distance = Math.sqrt((step.xstep - player.x) * 
+									(step.xstep - player.x) +
+									(step.ystep - player.y) *
+									(step.ystep - player.y));
+	return (eucl_distance * Math.cos(rayAngle - player.r_angle));
+}
 
 function normalizeAngle(angle) {
 	angle = angle % (2 * Math.PI);
